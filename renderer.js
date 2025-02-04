@@ -1,6 +1,3 @@
-const { ipcRenderer } = require('electron');
-const path = require('path');
-
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
 const settingsPanel = document.getElementById('settings-panel');
@@ -30,6 +27,7 @@ const customOmit = document.getElementById('custom-omit');
 let currentFolderPath = '';
 let filePreviewData = [];
 let individualOverrides = new Set(); // Track individually overridden files
+let supportedExtensions = window.api.getSupportedExtensions();
 
 // Media file extensions to ignore
 const mediaExtensions = [
@@ -56,40 +54,59 @@ function handleDragLeave(e) {
     dropZone.classList.remove('drag-over');
 }
 
-function handleDrop(e) {
+async function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
     dropZone.classList.remove('drag-over');
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        handleFolderSelection(files[0].path);
+        const result = await window.api.handleFolder(files[0].path);
+        if (result.success) {
+            handleFolderSelection(result.path);
+        } else {
+            alert('Error selecting folder: ' + result.error);
+        }
     }
 }
 
 // Click to select folder
 dropZone.addEventListener('click', () => {
+    console.log('Drop zone clicked'); // Debug log
+
     const input = document.createElement('input');
     input.type = 'file';
-    input.webkitdirectory = true;
+    input.setAttribute('webkitdirectory', '');
+    input.setAttribute('directory', '');
+    input.setAttribute('multiple', '');
     input.style.display = 'none';
     
-    input.addEventListener('change', (e) => {
+    input.addEventListener('change', async (e) => {
+        console.log('Input change event triggered'); // Debug log
         if (e.target.files.length > 0) {
-            handleFolderSelection(e.target.files[0].path);
+            const result = await window.api.handleFolder(e.target.files[0].path);
+            if (result.success) {
+                handleFolderSelection(result.path);
+            } else {
+                alert('Error selecting folder: ' + result.error);
+            }
         }
     });
     
     document.body.appendChild(input);
+    console.log('Input element appended to body'); // Debug log
     input.click();
+    console.log('Input element clicked programmatically'); // Debug log
     document.body.removeChild(input);
+    console.log('Input element removed from body'); // Debug log
 });
 
 function handleFolderSelection(path) {
-    currentFolderPath = path;
-    folderPath.textContent = path;
+    currentFolderPath = window.api.getPath(path);
+    folderPath.textContent = currentFolderPath;
     dropZone.classList.add('hidden');
     settingsPanel.classList.remove('hidden');
+    previewPanel.classList.remove('hidden');
 }
 
 // Build omit patterns from UI settings
@@ -126,10 +143,10 @@ async function processFolder() {
     if (!currentFolderPath) return;
     
     loadingOverlay.classList.remove('hidden');
-    const omitPatterns = buildOmitPatterns();
     
     try {
-        const result = await ipcRenderer.invoke('process-folder', currentFolderPath, omitPatterns);
+        const omitPatterns = buildOmitPatterns();
+        const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides));
         
         if (result.success) {
             filePreviewData = result.filePreview;
@@ -180,7 +197,8 @@ function getIgnoreReason(file) {
     const fileName = file.path.split(/[\\/]/).pop();
     if (!fileName) return '';
     
-    const ext = path.extname(fileName).toLowerCase();
+    // Use simple extension extraction instead of path.extname
+    const ext = fileName.includes('.') ? '.' + fileName.split('.').pop().toLowerCase() : '';
     
     if (file.path.startsWith('.git/')) return 'Git directory';
     if (file.path.startsWith('node_modules/')) return 'Node modules directory';
@@ -379,7 +397,7 @@ async function updateProcessedContent() {
     
     try {
         const omitPatterns = buildOmitPatterns();
-        const result = await ipcRenderer.invoke('process-folder', currentFolderPath, omitPatterns, Array.from(individualOverrides));
+        const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides));
         
         if (result.success) {
             // Update filePreviewData while preserving override states
@@ -415,7 +433,7 @@ function showResults(result) {
 // Save combined file
 async function saveCombinedFile() {
     try {
-        const result = await ipcRenderer.invoke('save-file', codePreview.textContent);
+        const result = await window.api.saveFile(codePreview.textContent);
         if (result.success) {
             alert('File saved successfully!');
         }
@@ -426,35 +444,30 @@ async function saveCombinedFile() {
 
 // Reset UI for new folder
 function resetUI() {
-    // Reset all panels
-    settingsPanel.classList.add('hidden');
-    previewPanel.classList.add('hidden');
-    resultPanel.classList.add('hidden');
-    loadingOverlay.classList.add('hidden');
+    currentFolderPath = '';
+    filePreviewData = [];
+    individualOverrides.clear();
     
-    // Clear all input fields and previews
+    // Reset form elements
     folderPath.textContent = '';
-    previewList.innerHTML = '';
-    previewFilter.value = '';
     customOmit.value = '';
-    codePreview.textContent = '';
-    
-    // Reset checkboxes to default state
     omitGit.checked = true;
     omitNodeModules.checked = true;
     omitHidden.checked = true;
     omitMedia.checked = true;
     
-    // Reset stats
+    // Reset preview and results
+    previewList.innerHTML = '';
     includedCount.textContent = '0 files included';
     excludedCount.textContent = '0 files excluded';
-    charCount.textContent = '0';
-    tokenCount.textContent = '0';
     
-    // Reset variables
-    currentFolderPath = '';
-    filePreviewData = [];
-    individualOverrides = new Set();
+    // Hide panels
+    settingsPanel.classList.add('hidden');
+    previewPanel.classList.add('hidden');
+    resultPanel.classList.add('hidden');
+    
+    // Show drop zone
+    dropZone.classList.remove('hidden');
 }
 
 // Event Listeners
