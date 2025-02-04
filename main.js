@@ -63,8 +63,16 @@ ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns, ind
   const gitignorePatterns = loadGitignorePatterns(folderPath);
   const omitPatterns = [...defaultOmitPatterns, ...gitignorePatterns, ...userOmitPatterns];
 
+  // Convert individualOverrides array to Set for faster lookups
+  const overridesSet = new Set(individualOverrides);
+
   // Supported file extensions
-  const supportedExtensions = ['.js', '.json', '.md', '.ts', '.html', '.css', '.rules', '.py'];
+  const supportedExtensions = [
+    '.js', '.jsx', '.ts', '.tsx',  // JavaScript and TypeScript
+    '.json', '.md',                // Data and documentation
+    '.html', '.css',               // Web files
+    '.rules', '.py'                // Other supported types
+  ];
 
   async function processDirectory(dir) {
     const files = await fs.promises.readdir(dir);
@@ -75,26 +83,36 @@ ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns, ind
       const relativePath = path.relative(folderPath, fullPath);
       
       // Check if path should be omitted, but respect individual overrides
-      const shouldOmit = !individualOverrides.includes(fullPath) && 
+      const shouldOmit = !overridesSet.has(relativePath) && 
                         omitPatterns.some(pattern => pattern.test(relativePath));
       
       if (stat.isDirectory()) {
-        filePreview.push({ path: fullPath, type: 'directory', included: !shouldOmit });
+        filePreview.push({ 
+          path: relativePath, // Use relative path instead of full path
+          type: 'directory', 
+          included: !shouldOmit,
+          size: 0 // Directories show as 0 bytes
+        });
         if (!shouldOmit) {
           await processDirectory(fullPath);
         }
       } else {
         const ext = path.extname(file).toLowerCase();
         const isSupported = supportedExtensions.includes(ext);
-        const isIncluded = (isSupported && !shouldOmit) || individualOverrides.includes(fullPath);
+        const isIncluded = (isSupported && !shouldOmit) || overridesSet.has(relativePath);
         
-        filePreview.push({ path: fullPath, type: 'file', included: isIncluded });
+        filePreview.push({ 
+          path: relativePath, // Use relative path instead of full path
+          type: 'file', 
+          included: isIncluded,
+          size: stat.size // Add file size in bytes
+        });
         
         if (isIncluded) {
           try {
             const content = await fs.promises.readFile(fullPath, 'utf8');
-            const relativePath = path.relative(folderPath, dir);
-            combinedText += `\n// ===== Folder: ${relativePath || '.'} | File: ${file} =====\n${content}\n`;
+            const relativeDir = path.relative(folderPath, dir);
+            combinedText += `\n// ===== Folder: ${relativeDir || '.'} | File: ${file} =====\n${content}\n`;
           } catch (error) {
             console.error(`Error reading file ${fullPath}:`, error);
           }

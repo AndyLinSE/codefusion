@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const path = require('path');
 
 // DOM Elements
 const dropZone = document.getElementById('drop-zone');
@@ -146,50 +147,231 @@ async function processFolder() {
 }
 
 // Update the file preview list
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function getIndentLevel(filePath) {
+    return filePath.split(/[\\/]/).length - 1;
+}
+
+function getFilePath(path) {
+    return path.split(/[\\/]/).join('/');
+}
+
+function getParentPath(path) {
+    const parts = path.split(/[\\/]/);
+    parts.pop();
+    return parts.join('/');
+}
+
+function isHiddenFile(path) {
+    const fileName = path.split(/[\\/]/).pop();
+    return fileName.startsWith('.');
+}
+
+function getIgnoreReason(file) {
+    if (!file || !file.path) return '';
+    
+    const fileName = file.path.split(/[\\/]/).pop();
+    if (!fileName) return '';
+    
+    const ext = path.extname(fileName).toLowerCase();
+    
+    if (file.path.startsWith('.git/')) return 'Git directory';
+    if (file.path.startsWith('node_modules/')) return 'Node modules directory';
+    if (isHiddenFile(file.path)) return 'Hidden file/directory';
+    if (file.type === 'file' && ext && !supportedExtensions.includes(ext)) {
+        return `File type "${ext}" is not in supported extensions list. Add it to supportedExtensions in main.js to include it.`;
+    }
+    return '';
+}
+
 function updateFilePreview(filterText = '') {
     const lowerFilter = filterText.toLowerCase();
     const filteredFiles = filePreviewData.filter(file => 
         file.path.toLowerCase().includes(lowerFilter)
     );
     
-    const included = filteredFiles.filter(f => f.included || individualOverrides.has(f.path)).length;
+    // Group files by directory
+    const filesByDirectory = new Map();
+    filteredFiles.forEach(file => {
+        const parentPath = getParentPath(file.path);
+        if (!filesByDirectory.has(parentPath)) {
+            filesByDirectory.set(parentPath, []);
+        }
+        filesByDirectory.get(parentPath).push(file);
+    });
+
+    const included = filteredFiles.filter(f => {
+        const isOverridden = individualOverrides.has(f.path);
+        return isOverridden ? !f.included : f.included;
+    }).length;
     const excluded = filteredFiles.length - included;
     
     includedCount.textContent = `${included} files included`;
     excludedCount.textContent = `${excluded} files excluded`;
     
     previewList.innerHTML = filteredFiles.map(file => {
-        const isIncluded = file.included || individualOverrides.has(file.path);
+        const isOverridden = individualOverrides.has(file.path);
+        const isIncluded = isOverridden ? !file.included : file.included;
+        const indentLevel = getIndentLevel(file.path);
+        const isDirectory = file.type === 'directory';
+        const hasChildren = filesByDirectory.has(file.path);
+        const isHidden = isHiddenFile(file.path);
+        const ignoreReason = getIgnoreReason(file);
+        
         return `
-            <div class="preview-item ${isIncluded ? 'included' : 'excluded'}">
-                <button class="toggle-btn" data-path="${file.path}">
+            <div class="preview-item ${isIncluded ? 'included' : 'excluded'} ${isHidden ? 'hidden-item' : ''}" 
+                 style="padding-left: ${indentLevel * 16 + 8}px"
+                 data-path="${file.path}"
+                 data-type="${file.type}">
+                ${!isIncluded && ignoreReason ? `
+                    <span class="info-icon" title="${ignoreReason}">ℹ️</span>
+                ` : '<span class="info-icon-placeholder"></span>'}
+                <button class="toggle-btn" data-path="${file.path}" data-original-state="${file.included}">
                     ${isIncluded ? '✅' : '🚫'}
                 </button>
-                <span class="file-type">${file.type}</span>
-                <span class="file-path">${file.path}</span>
+                <span class="file-type">
+                    ${file.type}${hasChildren ? ' ▾' : ''}
+                    ${isHidden ? '<span class="hidden-indicator">•</span>' : ''}
+                </span>
+                <span class="file-path">
+                    ${getFilePath(file.path)}
+                </span>
+                <span class="file-size">${formatFileSize(file.size || 0)}</span>
             </div>
         `;
     }).join('');
 
+    // Remove existing event listeners
+    const buttons = document.querySelectorAll('.toggle-btn');
+    buttons.forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+    });
+
     // Add click handlers for toggle buttons
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const path = e.currentTarget.dataset.path;
-            const fileData = filePreviewData.find(f => f.path === path);
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             
-            if (individualOverrides.has(path)) {
-                individualOverrides.delete(path);
+            const path = e.currentTarget.dataset.path;
+            const item = filePreviewData.find(f => f.path === path);
+            const isDirectory = item && item.type === 'directory';
+            
+            // Store current state before changes
+            const currentOverrides = new Set(individualOverrides);
+            
+            if (isDirectory) {
+                // Toggle all files in this directory
+                const dirPrefix = path + '/';
+                const shouldInclude = !isDirectoryIncluded(path);
+                
+                filePreviewData.forEach(f => {
+                    if (f.path.startsWith(dirPrefix)) {
+                        const shouldOverride = shouldInclude !== f.included;
+                        if (shouldOverride) {
+                            individualOverrides.add(f.path);
+                        } else {
+                            individualOverrides.delete(f.path);
+                        }
+                    }
+                });
+                
+                // Handle directory itself
+                if (shouldInclude !== item.included) {
+                    individualOverrides.add(path);
+                } else {
+                    individualOverrides.delete(path);
+                }
             } else {
-                individualOverrides.add(path);
+                // Toggle individual file
+                const shouldInclude = !isFileIncluded(path);
+                if (shouldInclude !== item.included) {
+                    individualOverrides.add(path);
+                } else {
+                    individualOverrides.delete(path);
+                }
             }
             
-            updateFilePreview(filterText);
-            updateProcessedContent();
+            // Update UI only if state actually changed
+            if (!setsAreEqual(currentOverrides, individualOverrides)) {
+                updateFilePreview(filterText);
+                updateProcessedContent();
+            }
+        });
+    });
+
+    // Add click handlers for directory items
+    document.querySelectorAll('.preview-item[data-type="directory"]').forEach(dir => {
+        dir.addEventListener('click', (e) => {
+            if (e.target.classList.contains('toggle-btn')) return;
+            
+            const path = dir.dataset.path;
+            const shouldInclude = !isDirectoryIncluded(path);
+            const dirPrefix = path + '/';
+            
+            // Store current state before changes
+            const currentOverrides = new Set(individualOverrides);
+            
+            // Toggle all files in this directory
+            filePreviewData.forEach(f => {
+                if (f.path.startsWith(dirPrefix)) {
+                    const shouldOverride = shouldInclude !== f.included;
+                    if (shouldOverride) {
+                        individualOverrides.add(f.path);
+                    } else {
+                        individualOverrides.delete(f.path);
+                    }
+                }
+            });
+            
+            // Handle directory itself
+            const dirItem = filePreviewData.find(f => f.path === path);
+            if (dirItem && shouldInclude !== dirItem.included) {
+                individualOverrides.add(path);
+            } else {
+                individualOverrides.delete(path);
+            }
+            
+            // Update UI only if state actually changed
+            if (!setsAreEqual(currentOverrides, individualOverrides)) {
+                updateFilePreview(filterText);
+                updateProcessedContent();
+            }
         });
     });
 }
 
-// New function to update processed content when toggles change
+// Helper functions for state management
+function isFileIncluded(path) {
+    const file = filePreviewData.find(f => f.path === path);
+    if (!file) return false;
+    return individualOverrides.has(path) ? !file.included : file.included;
+}
+
+function isDirectoryIncluded(path) {
+    const dir = filePreviewData.find(f => f.path === path);
+    if (!dir) return false;
+    return individualOverrides.has(path) ? !dir.included : dir.included;
+}
+
+function setsAreEqual(a, b) {
+    if (a.size !== b.size) return false;
+    for (const item of a) {
+        if (!b.has(item)) return false;
+    }
+    return true;
+}
+
+// Update the updateProcessedContent function
 async function updateProcessedContent() {
     if (!currentFolderPath) return;
     
@@ -200,6 +382,11 @@ async function updateProcessedContent() {
         const result = await ipcRenderer.invoke('process-folder', currentFolderPath, omitPatterns, Array.from(individualOverrides));
         
         if (result.success) {
+            // Update filePreviewData while preserving override states
+            const oldOverrides = new Set(individualOverrides);
+            filePreviewData = result.filePreview;
+            individualOverrides = oldOverrides;
+            
             updateStats(result);
             showResults(result);
         } else {
