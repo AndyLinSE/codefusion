@@ -71,47 +71,21 @@ async function handleDrop(e) {
 }
 
 // Click to select folder
-dropZone.addEventListener('click', () => {
-    console.log('Drop zone clicked'); // Debug log
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.webkitdirectory = true;
-    input.directory = true;
-    input.style.display = 'none';
-    
-    input.addEventListener('change', async (e) => {
-        console.log('Input change event triggered'); // Debug log
-        try {
-            if (e.target.files.length > 0) {
-                // Get the parent directory path from the first file
-                const firstFile = e.target.files[0];
-                const folderPath = firstFile.path.slice(0, firstFile.path.lastIndexOf(firstFile.name) - 1);
-                console.log('Selected folder path:', folderPath); // Debug log
-                
-                const result = await window.api.handleFolder(folderPath);
-                if (result.success) {
-                    handleFolderSelection(result.path);
-                } else {
-                    alert('Error selecting folder: ' + result.error);
-                }
-            }
-        } catch (error) {
-            console.error('Error handling folder selection:', error);
-            alert('Failed to select folder: ' + error.message);
-        } finally {
-            // Clean up the input element
-            if (document.body.contains(input)) {
-                document.body.removeChild(input);
+dropZone.addEventListener('click', async () => {
+    try {
+        const dialogResult = await window.api.openFolderDialog();
+        if (dialogResult.success) {
+            const result = await window.api.handleFolder(dialogResult.path);
+            if (result.success) {
+                handleFolderSelection(result.path);
+            } else {
+                alert('Error selecting folder: ' + result.error);
             }
         }
-    });
-    
-    // Add the input to the body and trigger click
-    document.body.appendChild(input);
-    console.log('Input element appended to body'); // Debug log
-    input.click();
-    console.log('Input element clicked programmatically'); // Debug log
+    } catch (error) {
+        console.error('Error handling folder selection:', error);
+        alert('Failed to select folder: ' + error.message);
+    }
 });
 
 function handleFolderSelection(path) {

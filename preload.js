@@ -22,7 +22,8 @@ try {
             // File system methods
             getPath: (filePath) => path.normalize(filePath),
             handleFolder: (folderPath) => 
-                ipcRenderer.invoke('handle-folder', folderPath)
+                ipcRenderer.invoke('handle-folder', folderPath),
+            openFolderDialog: () => ipcRenderer.invoke('open-folder-dialog')
         }
     );
 } catch (error) {

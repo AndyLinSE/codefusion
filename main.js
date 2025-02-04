@@ -15,8 +15,7 @@ const supportedExtensions = [
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    show: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -25,10 +24,9 @@ function createWindow() {
     }
   });
 
+  mainWindow.maximize();
+  mainWindow.show();
   mainWindow.loadFile('index.html');
-  
-  // Enable developer tools
-  mainWindow.webContents.openDevTools();
 }
 
 // Load .gitignore patterns if they exist
@@ -46,6 +44,18 @@ function loadGitignorePatterns(folderPath) {
 
 // Register IPC handlers
 function registerIpcHandlers() {
+  // Handler for opening folder dialog
+  ipcMain.handle('open-folder-dialog', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { success: true, path: result.filePaths[0] };
+    }
+    return { success: false, error: 'No folder selected' };
+  });
+
   // Handler for folder selection
   ipcMain.handle('handle-folder', async (event, folderPath) => {
     try {
