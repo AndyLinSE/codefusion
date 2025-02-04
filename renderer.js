@@ -23,10 +23,23 @@ const loadingOverlay = document.getElementById('loading-overlay');
 const omitGit = document.getElementById('omit-git');
 const omitNodeModules = document.getElementById('omit-node-modules');
 const omitHidden = document.getElementById('omit-hidden');
+const omitMedia = document.getElementById('omit-media');
 const customOmit = document.getElementById('custom-omit');
 
 let currentFolderPath = '';
 let filePreviewData = [];
+
+// Media file extensions to ignore
+const mediaExtensions = [
+    // Images
+    'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg', 'ico',
+    // Audio
+    'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'wma',
+    // Video
+    'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', '3gp',
+    // Other media
+    'psd', 'ai', 'eps', 'raw'
+];
 
 // Drag and drop handlers
 function handleDragOver(e) {
@@ -84,6 +97,10 @@ function buildOmitPatterns() {
     if (omitGit.checked) patterns.push(/^\.git/);
     if (omitNodeModules.checked) patterns.push(/^node_modules/);
     if (omitHidden.checked) patterns.push(/^\..*/);
+    if (omitMedia.checked) {
+        const mediaPattern = new RegExp(`\\.(${mediaExtensions.join('|')})$`, 'i');
+        patterns.push(mediaPattern);
+    }
     
     const customPatterns = customOmit.value
         .split(',')
@@ -193,6 +210,7 @@ function resetUI() {
     omitGit.checked = true;
     omitNodeModules.checked = true;
     omitHidden.checked = true;
+    omitMedia.checked = true;
     
     // Reset stats
     includedCount.textContent = '0 files included';
