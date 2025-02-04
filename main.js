@@ -7,10 +7,35 @@ let mainWindow;
 
 // Supported file extensions
 const supportedExtensions = [
-  '.js', '.jsx', '.ts', '.tsx',  // JavaScript and TypeScript
-  '.json', '.md',                // Data and documentation
-  '.html', '.css',               // Web files
-  '.rules', '.py'                // Other supported types
+  // JavaScript and TypeScript
+  '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs',
+  
+  // Web Development
+  '.html', '.htm', '.css', '.scss', '.sass', '.less', '.vue', '.svelte',
+  
+  // Documentation and Config
+  '.md', '.mdx', '.txt', '.yaml', '.yml', '.toml', '.ini', '.env.example',
+  '.json', '.jsonc', '.json5',
+  
+  // Python
+  '.py', '.pyi', '.pyw', '.ipynb',
+  
+  // Other Programming Languages
+  '.java', '.kt', '.scala',          // JVM languages
+  '.c', '.cpp', '.h', '.hpp',        // C/C++
+  '.cs',                             // C#
+  '.go',                             // Go
+  '.rb',                             // Ruby
+  '.php',                            // PHP
+  '.rs',                             // Rust
+  '.swift',                          // Swift
+  '.sh', '.bash', '.zsh', '.fish',   // Shell scripts
+  '.pl', '.pm',                      // Perl
+  
+  // Config and Build
+  '.xml', '.gradle', '.properties',  // Build configs
+  '.dockerfile', '.containerfile',   // Container configs
+  '.rules'                           // Custom rules
 ];
 
 function createWindow() {
@@ -36,8 +61,29 @@ function loadGitignorePatterns(folderPath) {
   if (fs.existsSync(gitignorePath)) {
     const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
     patterns = gitignoreContent.split('\n')
+      .map(line => line.trim())
       .filter(line => line && !line.startsWith('#'))
-      .map(pattern => new RegExp(pattern.trim().replace('*', '.*'), 'i'));
+      .map(pattern => {
+        // Escape special regex characters except * and ?
+        let regexPattern = pattern
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+          .replace(/\*/g, '.*')
+          .replace(/\?/g, '.');
+        
+        // Handle directory-specific patterns
+        if (pattern.endsWith('/')) {
+          regexPattern = `${regexPattern}.*`;
+        }
+        
+        // Handle patterns starting with /
+        if (pattern.startsWith('/')) {
+          regexPattern = `^${regexPattern.slice(1)}`;
+        } else {
+          regexPattern = `.*${regexPattern}`;
+        }
+        
+        return new RegExp(regexPattern, 'i');
+      });
   }
   return patterns;
 }
@@ -77,7 +123,18 @@ function registerIpcHandlers() {
     // Default patterns to omit with labels
     const defaultOmitPatterns = [
       { pattern: /^\.git\//, label: 'Git directory' },
-      { pattern: /^node_modules\//, label: 'Node modules directory' }
+      { pattern: /^node_modules\//, label: 'Node modules directory' },
+      { pattern: /^[.].*/, label: 'Hidden file/directory' },
+      { pattern: /^dist\//, label: 'Distribution directory' },
+      { pattern: /^build\//, label: 'Build directory' },
+      { pattern: /^out\//, label: 'Output directory' },
+      { pattern: /^coverage\//, label: 'Test coverage directory' },
+      { pattern: /^temp\/|^\.tmp\//, label: 'Temporary files directory' },
+      { pattern: /^__pycache__\//, label: 'Python cache directory' },
+      { pattern: /^vendor\//, label: 'Third-party vendor directory' },
+      { pattern: /^bin\//, label: 'Binary files directory' },
+      { pattern: /^obj\//, label: 'Object files directory' },
+      { pattern: /^target\//, label: 'Build target directory' }
     ];
 
     // Convert gitignore patterns

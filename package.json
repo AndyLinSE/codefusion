@@ -16,6 +16,14 @@
   },
   "build": {
     "appId": "com.codefusion.app",
+    "files": [
+      "**/*",
+      "!.git",
+      "!.cursor",
+      "!dist",
+      "!node_modules",
+      "!**/*.{iml,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,suo,xproj,cc,d.ts}"
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"
