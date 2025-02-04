@@ -35,6 +35,7 @@ let currentFolderPath = '';
 let filePreviewData = [];
 let individualOverrides = new Map(); // Change from Set to Map to store the desired state
 let supportedExtensions = window.api.getSupportedExtensions();
+let collapsedDirectories = new Set(); // Add this at the top with other state variables
 
 // Media file extensions to ignore
 const mediaExtensions = [
@@ -146,6 +147,10 @@ async function processFolder() {
     loadingOverlay.classList.remove('hidden');
     
     try {
+        // Clear existing overrides when reprocessing
+        individualOverrides.clear();
+        collapsedDirectories.clear();
+
         const omitPatterns = buildOmitPatterns();
         const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides.entries())
             .filter(([_, included]) => !included)
@@ -153,7 +158,15 @@ async function processFolder() {
         
         if (result.success) {
             filePreviewData = result.filePreview;
-            updateFilePreview();
+            
+            // Set initial collapsed state: collapse ignored directories, expand included ones
+            filePreviewData.forEach(file => {
+                if (file.type === 'directory' && !file.included) {
+                    collapsedDirectories.add(getFilePath(file.path));
+                }
+            });
+            
+            updateFilePreview(document.getElementById('preview-filter').value || '');
             updateStats(result);
             showResults(result);
         } else {
@@ -180,11 +193,14 @@ function getIndentLevel(filePath) {
 }
 
 function getFilePath(path) {
-    return path.split(/[\\/]/).join('/');
+    // Normalize path separators to forward slashes
+    return path.replace(/\\/g, '/');
 }
 
 function getParentPath(path) {
-    const parts = path.split(/[\\/]/);
+    // Normalize path separators to forward slashes
+    const normalizedPath = path.replace(/\\/g, '/');
+    const parts = normalizedPath.split('/');
     parts.pop();
     return parts.join('/');
 }
@@ -198,15 +214,22 @@ function getIgnoreReason(file) {
     if (!file || !file.path) return '';
     
     // If we have an explicit omit reason from the main process, use that
-    if (file.omitReason) return file.omitReason;
+    let reason = file.omitReason;
     
     // Fallback checks for any cases not caught by main process
-    const fileName = file.path.split(/[\\/]/).pop();
-    if (!fileName) return '';
+    if (!reason) {
+        const fileName = file.path.split(/[\\/]/).pop();
+        if (!fileName) return '';
+        
+        if (isHiddenFile(file.path)) reason = 'Hidden file/directory';
+    }
+
+    // For ignored directories, add instruction about how to view contents
+    if (reason && file.type === 'directory' && !file.included) {
+        return `${reason}. Uncheck the corresponding omit box above and click "Process Folder" to view contents.`;
+    }
     
-    if (isHiddenFile(file.path)) return 'Hidden file/directory';
-    
-    return '';
+    return reason || '';
 }
 
 function updateFilePreview(filterText = '') {
@@ -225,37 +248,78 @@ function updateFilePreview(filterText = '') {
         filesByDirectory.get(parentPath).push(file);
     });
 
+    // Helper function to check if file should be visible
+    function shouldBeVisible(file) {
+        // Get normalized path and log debug info
+        const path = getFilePath(file.path);
+        console.log(`Checking visibility for: ${path}`);
+        console.log(`Type: ${file.type}, Included: ${file.included}`);
+        console.log(`Current collapsed directories:`, Array.from(collapsedDirectories));
+
+        // Always show the root directory
+        if (file.type === 'directory' && !path.includes('/')) {
+            console.log('Root directory - always visible');
+            return true;
+        }
+
+        // Check if any parent directory is collapsed
+        for (const collapsedDir of collapsedDirectories) {
+            // If this is a directory that's collapsed, show it (but its children will be hidden)
+            if (file.type === 'directory' && path === collapsedDir) {
+                console.log(`Directory ${path} is collapsed but showing itself`);
+                return true;
+            }
+
+            // If this item is under a collapsed directory, hide it
+            if (path.startsWith(collapsedDir + '/')) {
+                console.log(`Item is under collapsed directory ${collapsedDir} - hiding`);
+                return false;
+            }
+        }
+
+        console.log(`No collapsed parent directories found - showing`);
+        return true;
+    }
+
     const included = filteredFiles.filter(f => {
         const isOverridden = individualOverrides.has(f.path);
-        return isOverridden ? !f.included : f.included;
+        return isOverridden ? individualOverrides.get(f.path) : f.included;
     }).length;
     const excluded = filteredFiles.length - included;
+    
+    console.log(`Total files: ${filteredFiles.length}, Included: ${included}, Excluded: ${excluded}`);
     
     includedCount.textContent = `${included} files included`;
     excludedCount.textContent = `${excluded} files excluded`;
     
-    previewList.innerHTML = filteredFiles.map(file => {
+    // Filter files based on visibility
+    const visibleFiles = filteredFiles.filter(shouldBeVisible);
+    console.log(`Visible files after filtering: ${visibleFiles.length}`);
+    
+    previewList.innerHTML = visibleFiles.map(file => {
         const isOverridden = individualOverrides.has(file.path);
-        const isIncluded = isOverridden ? !file.included : file.included;
+        const isIncluded = isOverridden ? individualOverrides.get(file.path) : file.included;
         const indentLevel = getIndentLevel(file.path);
         const isDirectory = file.type === 'directory';
         const hasChildren = filesByDirectory.has(file.path);
         const isHidden = isHiddenFile(file.path);
         const ignoreReason = getIgnoreReason(file);
+        const isCollapsed = isDirectory && collapsedDirectories.has(getFilePath(file.path));
         
         return `
             <div class="preview-item ${isIncluded ? 'included' : 'excluded'} ${isHidden ? 'hidden-item' : ''}" 
                  style="padding-left: ${indentLevel * 16 + 8}px"
                  data-path="${file.path}"
                  data-type="${file.type}">
-                ${!isIncluded && ignoreReason ? `
-                    <span class="info-icon" title="${ignoreReason}">ℹ️</span>
-                ` : '<span class="info-icon-placeholder"></span>'}
+                <span class="info-icon${(!isIncluded && ignoreReason) ? ' active' : ''}"
+                      ${(!isIncluded && ignoreReason) ? `data-tooltip="${ignoreReason}"` : ''}>
+                    ${(!isIncluded && ignoreReason) ? 'ℹ️' : ''}
+                </span>
                 <button class="toggle-btn" data-path="${file.path}" data-original-state="${file.included}">
-                    ${isIncluded ? '✅' : '🚫'}
+                    ${isIncluded ? '✓' : '×'}
                 </button>
-                <span class="file-type">
-                    ${file.type}${hasChildren ? ' ▾' : ''}
+                <span class="file-type" data-arrow="${isDirectory ? (isCollapsed ? '▸' : '▾') : ''}">
+                    ${file.type}
                     ${isHidden ? '<span class="hidden-indicator">•</span>' : ''}
                 </span>
                 <span class="file-path">
@@ -273,12 +337,11 @@ function updateFilePreview(filterText = '') {
         btn.parentNode.replaceChild(newBtn, btn);
     });
 
-    // Add click handlers for toggle buttons
+    // Add click handlers for toggle buttons - only handle inclusion/exclusion
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            e.stopImmediatePropagation();
             
             const path = e.currentTarget.dataset.path;
             const item = filePreviewData.find(f => f.path === path);
@@ -289,11 +352,11 @@ function updateFilePreview(filterText = '') {
             
             if (isDirectory) {
                 // Toggle all files in this directory
-                const dirPrefix = path + '/';
+                const dirPrefix = getFilePath(path) + '/';
                 const shouldInclude = !isDirectoryIncluded(path);
                 
                 filePreviewData.forEach(f => {
-                    if (f.path.startsWith(dirPrefix)) {
+                    if (getFilePath(f.path).startsWith(dirPrefix)) {
                         individualOverrides.set(f.path, shouldInclude);
                     }
                 });
@@ -314,38 +377,11 @@ function updateFilePreview(filterText = '') {
         });
     });
 
-    // Add click handlers for directory items
-    document.querySelectorAll('.preview-item[data-type="directory"]').forEach(dir => {
-        dir.addEventListener('click', (e) => {
-            if (e.target.classList.contains('toggle-btn')) return;
-            
-            const path = dir.dataset.path;
-            const shouldInclude = !isDirectoryIncluded(path);
-            const dirPrefix = path + '/';
-            
-            // Store current state before changes
-            const currentOverrides = new Map(individualOverrides);
-            
-            // Toggle all files in this directory
-            filePreviewData.forEach(f => {
-                if (f.path.startsWith(dirPrefix)) {
-                    individualOverrides.set(f.path, shouldInclude);
-                }
-            });
-            
-            // Handle directory itself
-            const dirItem = filePreviewData.find(f => f.path === path);
-            if (dirItem && shouldInclude !== dirItem.included) {
-                individualOverrides.set(path, shouldInclude);
-            }
-            
-            // Update UI only if state actually changed
-            if (!setsAreEqual(currentOverrides, individualOverrides)) {
-                updateFilePreview(document.getElementById('preview-filter').value || '');
-                updateProcessedContent();
-            }
-        });
-    });
+    // Remove any existing click handler
+    previewList.removeEventListener('click', handleDirectoryClick);
+    
+    // Add the click handler to the container
+    previewList.addEventListener('click', handleDirectoryClick);
 }
 
 // Helper functions for state management
@@ -411,6 +447,32 @@ function showResults(result) {
     previewPanel.classList.remove('hidden');
     resultPanel.classList.remove('hidden');
     codePreview.textContent = result.combinedText;
+    
+    // Add copy to clipboard button if it doesn't exist
+    if (!document.getElementById('copy-btn')) {
+        const copyBtn = document.createElement('button');
+        copyBtn.id = 'copy-btn';
+        copyBtn.className = 'secondary-button';
+        copyBtn.innerHTML = '📋 Copy to Clipboard';
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(codePreview.textContent);
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '✓ Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                copyBtn.innerHTML = '❌ Failed to copy';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋 Copy to Clipboard';
+                }, 2000);
+            }
+        });
+        // Insert the copy button before the save button
+        saveBtn.parentNode.insertBefore(copyBtn, saveBtn);
+    }
 }
 
 // Save combined file
@@ -474,4 +536,31 @@ newFolderBtn.addEventListener('click', () => {
 changeFolderBtn.addEventListener('click', () => {
     resetUI();
     dropZone.classList.remove('hidden');
-}); 
+});
+
+// Define the directory click handler outside updateFilePreview
+function handleDirectoryClick(e) {
+    // If the user clicked the toggle button, do nothing
+    if (e.target.closest('.toggle-btn')) return;
+
+    // Otherwise, if this is a directory row, toggle collapse
+    const dirItem = e.target.closest('.preview-item[data-type="directory"]');
+    if (!dirItem) return; // not a directory
+    
+    console.log('Directory clicked:', dirItem.dataset.path);
+    
+    const normalizedPath = getFilePath(dirItem.dataset.path);
+    console.log('Normalized path:', normalizedPath);
+    console.log('Collapsed directories before:', Array.from(collapsedDirectories));
+    
+    if (collapsedDirectories.has(normalizedPath)) {
+        console.log('Removing from collapsed directories');
+        collapsedDirectories.delete(normalizedPath);
+    } else {
+        console.log('Adding to collapsed directories');
+        collapsedDirectories.add(normalizedPath);
+    }
+    
+    console.log('Collapsed directories after:', Array.from(collapsedDirectories));
+    updateFilePreview(document.getElementById('preview-filter').value || '');
+} 

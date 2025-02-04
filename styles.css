@@ -174,12 +174,76 @@ h1 {
 }
 
 .preview-item[data-type="directory"] {
-    cursor: pointer;
+    cursor: default;
     font-weight: 500;
+}
+
+.preview-item[data-type="directory"] .file-type,
+.preview-item[data-type="directory"] .file-path {
+    cursor: pointer;
 }
 
 .preview-item[data-type="directory"]:hover {
     background-color: rgba(0, 0, 0, 0.02);
+}
+
+.preview-item[data-type="directory"] .file-type {
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-item[data-type="directory"] .file-type::before {
+    content: attr(data-arrow);
+    display: inline-block;
+    width: 12px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.preview-item[data-type="directory"] .file-type:hover::before {
+    color: var(--primary-color);
+}
+
+.preview-item[data-type="directory"] .file-path:hover {
+    color: var(--primary-color);
+}
+
+.preview-item .toggle-btn {
+    padding: 0.15rem;
+    border: 1px solid var(--border-color);
+    background: white;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 4px;
+    color: var(--text-muted);
+}
+
+.preview-item .toggle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: scale(1.1);
+    border-color: var(--primary-color);
+}
+
+.preview-item .toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.preview-item.included .toggle-btn {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.preview-item.excluded .toggle-btn {
+    color: var(--danger-color);
+    border-color: var(--danger-color);
 }
 
 .preview-item:last-child {
@@ -211,38 +275,11 @@ h1 {
     font-style: italic;
 }
 
-.toggle-btn {
-    padding: 0.15rem;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-    min-width: 24px;
-    min-height: 24px;
-    border-radius: 4px;
-}
-
-.toggle-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    transform: scale(1.1);
-}
-
-.toggle-btn:active {
-    transform: scale(0.95);
-}
-
 .file-type {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    min-width: 50px;
-    user-select: none;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    min-width: 100px;
 }
 
 .file-path {
@@ -342,12 +379,25 @@ h1 {
 }
 
 .secondary-button {
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    margin-right: 0.5rem;
 }
 
 .secondary-button:hover {
-    background-color: #5a6268;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#copy-btn {
+    margin-right: 8px;
+    min-width: 150px;
 }
 
 /* Loading Overlay */
@@ -391,51 +441,9 @@ h1 {
     margin-top: 20px;
 }
 
-.secondary-button {
-    background-color: #f0f0f0;
-    color: #333;
-    padding: 10px 20px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s;
-}
-
-.secondary-button:hover {
-    background-color: #e0e0e0;
-}
-
 /* Add tooltip styles */
 [title] {
     position: relative;
-}
-
-[title]:hover::after {
-    content: attr(title);
-    position: absolute;
-    left: 0;
-    top: 100%;
-    white-space: nowrap;
-    background-color: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    z-index: 1000;
-    margin-top: 5px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Add arrow to tooltip */
-[title]:hover::before {
-    content: '';
-    position: absolute;
-    left: 10px;
-    top: 100%;
-    border: 5px solid transparent;
-    border-bottom-color: rgba(0, 0, 0, 0.9);
-    z-index: 1000;
 }
 
 .info-icon {
@@ -444,17 +452,17 @@ h1 {
     justify-content: center;
     width: 24px;
     height: 24px;
-    cursor: help;
     position: relative;
 }
 
-.info-icon-placeholder {
-    width: 24px;
-    height: 24px;
+.info-icon.active {
+    cursor: help;
 }
 
-/* Specific styles for info icon tooltips */
-.info-icon[title]:hover::after {
+/* Keep only these specific info icon tooltip styles */
+.info-icon.active[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
     left: -10px;
     background-color: rgba(0, 0, 0, 0.9);
     color: white;
@@ -467,8 +475,15 @@ h1 {
     min-width: 200px;
     max-width: 300px;
     white-space: normal;
+    top: 100%;
 }
 
-.info-icon[title]:hover::before {
+.info-icon.active[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
     left: 7px;
+    top: 100%;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
 } 

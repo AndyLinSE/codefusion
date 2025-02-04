@@ -185,7 +185,8 @@ function registerIpcHandlers() {
             size: 0,
             omitReason
           });
-          if (!shouldOmit) {
+          // Only process directory contents if it's not omitted or explicitly included in overrides
+          if (!shouldOmit || overridesSet.has(relativePath)) {
             await processDirectory(fullPath);
           }
         } else {
