@@ -20,6 +20,13 @@ const loadingOverlay = document.getElementById('loading-overlay');
 // Checkbox elements
 const omitGit = document.getElementById('omit-git');
 const omitNodeModules = document.getElementById('omit-node-modules');
+const omitDist = document.getElementById('omit-dist');
+const omitBuild = document.getElementById('omit-build');
+const omitOut = document.getElementById('omit-out');
+const omitCoverage = document.getElementById('omit-coverage');
+const omitTemp = document.getElementById('omit-temp');
+const omitVendor = document.getElementById('omit-vendor');
+const omitCache = document.getElementById('omit-cache');
 const omitHidden = document.getElementById('omit-hidden');
 const omitMedia = document.getElementById('omit-media');
 const customOmit = document.getElementById('custom-omit');
@@ -102,6 +109,13 @@ function buildOmitPatterns() {
     
     if (omitGit.checked) patterns.push(/^\.git/);
     if (omitNodeModules.checked) patterns.push(/^node_modules/);
+    if (omitDist.checked) patterns.push(/^dist/);
+    if (omitBuild.checked) patterns.push(/^build/);
+    if (omitOut.checked) patterns.push(/^out/);
+    if (omitCoverage.checked) patterns.push(/^coverage/);
+    if (omitTemp.checked) patterns.push(/^temp\/|^\.tmp/);
+    if (omitVendor.checked) patterns.push(/^vendor/);
+    if (omitCache.checked) patterns.push(/^__pycache__\/|^\.cache/);
     if (omitHidden.checked) patterns.push(/^\..*/);
     if (omitMedia.checked) {
         const mediaPattern = new RegExp(`\\.(${mediaExtensions.join('|')})$`, 'i');
@@ -422,6 +436,13 @@ function resetUI() {
     customOmit.value = '';
     omitGit.checked = true;
     omitNodeModules.checked = true;
+    omitDist.checked = true;
+    omitBuild.checked = true;
+    omitOut.checked = true;
+    omitCoverage.checked = true;
+    omitTemp.checked = true;
+    omitVendor.checked = true;
+    omitCache.checked = true;
     omitHidden.checked = true;
     omitMedia.checked = true;
     
