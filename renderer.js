@@ -28,6 +28,7 @@ const customOmit = document.getElementById('custom-omit');
 
 let currentFolderPath = '';
 let filePreviewData = [];
+let individualOverrides = new Set(); // Track individually overridden files
 
 // Media file extensions to ignore
 const mediaExtensions = [
@@ -151,19 +152,64 @@ function updateFilePreview(filterText = '') {
         file.path.toLowerCase().includes(lowerFilter)
     );
     
-    const included = filteredFiles.filter(f => f.included).length;
+    const included = filteredFiles.filter(f => f.included || individualOverrides.has(f.path)).length;
     const excluded = filteredFiles.length - included;
     
     includedCount.textContent = `${included} files included`;
     excludedCount.textContent = `${excluded} files excluded`;
     
-    previewList.innerHTML = filteredFiles.map(file => `
-        <div class="preview-item">
-            <span>${file.included ? '✅' : '🚫'}</span>
-            <span>${file.type === 'directory' ? '📁' : '📄'}</span>
-            <span>${file.path}</span>
-        </div>
-    `).join('');
+    previewList.innerHTML = filteredFiles.map(file => {
+        const isIncluded = file.included || individualOverrides.has(file.path);
+        return `
+            <div class="preview-item ${isIncluded ? 'included' : 'excluded'}">
+                <button class="toggle-btn" data-path="${file.path}">
+                    ${isIncluded ? '✅' : '🚫'}
+                </button>
+                <span class="file-type">${file.type}</span>
+                <span class="file-path">${file.path}</span>
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers for toggle buttons
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const path = e.currentTarget.dataset.path;
+            const fileData = filePreviewData.find(f => f.path === path);
+            
+            if (individualOverrides.has(path)) {
+                individualOverrides.delete(path);
+            } else {
+                individualOverrides.add(path);
+            }
+            
+            updateFilePreview(filterText);
+            updateProcessedContent();
+        });
+    });
+}
+
+// New function to update processed content when toggles change
+async function updateProcessedContent() {
+    if (!currentFolderPath) return;
+    
+    loadingOverlay.classList.remove('hidden');
+    
+    try {
+        const omitPatterns = buildOmitPatterns();
+        const result = await ipcRenderer.invoke('process-folder', currentFolderPath, omitPatterns, Array.from(individualOverrides));
+        
+        if (result.success) {
+            updateStats(result);
+            showResults(result);
+        } else {
+            alert('Error processing folder: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error processing folder: ' + error.message);
+    } finally {
+        loadingOverlay.classList.add('hidden');
+    }
 }
 
 // Update statistics display
@@ -221,6 +267,7 @@ function resetUI() {
     // Reset variables
     currentFolderPath = '';
     filePreviewData = [];
+    individualOverrides = new Set();
 }
 
 // Event Listeners

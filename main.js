@@ -49,15 +49,14 @@ function loadGitignorePatterns(folderPath) {
 }
 
 // Handle folder processing request
-ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns) => {
+ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns, individualOverrides = []) => {
   let combinedText = '';
   let filePreview = [];
 
   // Default patterns to omit
   const defaultOmitPatterns = [
-    /^\.git/,
-    /^node_modules/,
-    /^\..*/,  // any file/folder starting with a period
+    /^\.git\//,  // Only ignore .git directory, not all files starting with .
+    /^node_modules\//  // Only ignore node_modules directory
   ];
 
   // Combine all patterns
@@ -73,9 +72,11 @@ ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns) => 
     for (const file of files) {
       const fullPath = path.join(dir, file);
       const stat = await fs.promises.stat(fullPath);
+      const relativePath = path.relative(folderPath, fullPath);
       
-      // Check if path should be omitted
-      const shouldOmit = omitPatterns.some(pattern => pattern.test(file));
+      // Check if path should be omitted, but respect individual overrides
+      const shouldOmit = !individualOverrides.includes(fullPath) && 
+                        omitPatterns.some(pattern => pattern.test(relativePath));
       
       if (stat.isDirectory()) {
         filePreview.push({ path: fullPath, type: 'directory', included: !shouldOmit });
@@ -85,9 +86,11 @@ ipcMain.handle('process-folder', async (event, folderPath, userOmitPatterns) => 
       } else {
         const ext = path.extname(file).toLowerCase();
         const isSupported = supportedExtensions.includes(ext);
-        filePreview.push({ path: fullPath, type: 'file', included: !shouldOmit && isSupported });
+        const isIncluded = (isSupported && !shouldOmit) || individualOverrides.includes(fullPath);
         
-        if (!shouldOmit && isSupported) {
+        filePreview.push({ path: fullPath, type: 'file', included: isIncluded });
+        
+        if (isIncluded) {
           try {
             const content = await fs.promises.readFile(fullPath, 'utf8');
             const relativePath = path.relative(folderPath, dir);

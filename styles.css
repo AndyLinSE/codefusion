@@ -173,6 +173,36 @@ h1 {
     border-bottom: none;
 }
 
+.preview-item.included {
+    background-color: rgba(75, 181, 67, 0.05);
+}
+
+.preview-item.excluded {
+    background-color: rgba(181, 67, 67, 0.05);
+}
+
+.toggle-btn {
+    padding: 4px 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.toggle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.file-type {
+    color: var(--text-muted);
+    min-width: 60px;
+}
+
+.file-path {
+    word-break: break-all;
+}
+
 /* Result Panel */
 .result-panel {
     margin-top: 2rem;
