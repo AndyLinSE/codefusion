@@ -196,18 +196,15 @@ function isHiddenFile(path) {
 function getIgnoreReason(file) {
     if (!file || !file.path) return '';
     
+    // If we have an explicit omit reason from the main process, use that
+    if (file.omitReason) return file.omitReason;
+    
+    // Fallback checks for any cases not caught by main process
     const fileName = file.path.split(/[\\/]/).pop();
     if (!fileName) return '';
     
-    // Use simple extension extraction instead of path.extname
-    const ext = fileName.includes('.') ? '.' + fileName.split('.').pop().toLowerCase() : '';
-    
-    if (file.path.startsWith('.git/')) return 'Git directory';
-    if (file.path.startsWith('node_modules/')) return 'Node modules directory';
     if (isHiddenFile(file.path)) return 'Hidden file/directory';
-    if (file.type === 'file' && ext && !supportedExtensions.includes(ext)) {
-        return `File type "${ext}" is not in supported extensions list. Add it to supportedExtensions in main.js to include it.`;
-    }
+    
     return '';
 }
 

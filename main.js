@@ -64,15 +64,26 @@ function registerIpcHandlers() {
     let combinedText = '';
     let filePreview = [];
 
-    // Default patterns to omit
+    // Default patterns to omit with labels
     const defaultOmitPatterns = [
-      /^\.git\//,  // Only ignore .git directory, not all files starting with .
-      /^node_modules\//  // Only ignore node_modules directory
+      { pattern: /^\.git\//, label: 'Git directory' },
+      { pattern: /^node_modules\//, label: 'Node modules directory' }
     ];
 
+    // Convert gitignore patterns
+    const gitignorePatterns = loadGitignorePatterns(folderPath).map(pattern => ({
+      pattern,
+      label: 'Matched .gitignore pattern'
+    }));
+
+    // Convert user patterns
+    const labeledUserPatterns = userOmitPatterns.map(pattern => ({
+      pattern,
+      label: 'Matched custom omit pattern'
+    }));
+
     // Combine all patterns
-    const gitignorePatterns = loadGitignorePatterns(folderPath);
-    const omitPatterns = [...defaultOmitPatterns, ...gitignorePatterns, ...userOmitPatterns];
+    const omitPatterns = [...defaultOmitPatterns, ...gitignorePatterns, ...labeledUserPatterns];
 
     // Convert individualOverrides array to Set for faster lookups
     const overridesSet = new Set(individualOverrides);
@@ -85,16 +96,27 @@ function registerIpcHandlers() {
         const stat = await fs.promises.stat(fullPath);
         const relativePath = path.relative(folderPath, fullPath);
         
-        // Check if path should be omitted, but respect individual overrides
-        const shouldOmit = !overridesSet.has(relativePath) && 
-                          omitPatterns.some(pattern => pattern.test(relativePath));
+        // Check if path should be omitted and get the reason
+        let shouldOmit = false;
+        let omitReason = '';
+        
+        if (!overridesSet.has(relativePath)) {
+          for (const {pattern, label} of omitPatterns) {
+            if (pattern.test(relativePath)) {
+              shouldOmit = true;
+              omitReason = label;
+              break;
+            }
+          }
+        }
         
         if (stat.isDirectory()) {
           filePreview.push({ 
             path: relativePath,
             type: 'directory', 
             included: !shouldOmit,
-            size: 0
+            size: 0,
+            omitReason
           });
           if (!shouldOmit) {
             await processDirectory(fullPath);
@@ -102,15 +124,22 @@ function registerIpcHandlers() {
         } else {
           const ext = path.extname(file).toLowerCase();
           const isSupported = supportedExtensions.includes(ext);
-          const isIncluded = (isSupported && !shouldOmit) || overridesSet.has(relativePath);
+          if (!isSupported && !omitReason) {
+            shouldOmit = true;
+            omitReason = `File type "${ext}" is not in supported extensions list`;
+          }
+          
+          const isIncluded = !shouldOmit || overridesSet.has(relativePath);
           
           filePreview.push({ 
             path: relativePath,
             type: 'file', 
             included: isIncluded,
-            size: stat.size
+            size: stat.size,
+            omitReason: isIncluded ? '' : omitReason
           });
-          
+
+          // Add content to combinedText if file is included
           if (isIncluded) {
             try {
               const content = await fs.promises.readFile(fullPath, 'utf8');
