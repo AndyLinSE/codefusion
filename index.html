@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeFusion</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CodeFusion</h1>
+            <p class="subtitle">Combine your code files for AI analysis</p>
+        </header>
+
+        <main>
+            <div id="drop-zone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <svg class="upload-icon" viewBox="0 0 24 24">
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                    </svg>
+                    <p>Drag and drop your code folder here</p>
+                    <p class="small">or click to select folder</p>
+                </div>
+            </div>
+
+            <div id="settings-panel" class="settings-panel hidden">
+                <div class="folder-info">
+                    <h3>Selected Folder:</h3>
+                    <p id="folder-path"></p>
+                </div>
+
+                <div class="omit-settings">
+                    <h3>Omission Settings</h3>
+                    <div class="common-patterns">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="omit-git" checked>
+                            <span class="checkmark"></span>
+                            Ignore .git folder
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="omit-node-modules" checked>
+                            <span class="checkmark"></span>
+                            Ignore node_modules
+                        </label>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="omit-hidden" checked>
+                            <span class="checkmark"></span>
+                            Ignore hidden files/folders
+                        </label>
+                    </div>
+                    
+                    <div class="custom-patterns">
+                        <label for="custom-omit">Additional patterns to ignore (comma-separated):</label>
+                        <input type="text" id="custom-omit" placeholder="e.g., \.log$, temp">
+                    </div>
+                </div>
+
+                <button id="process-btn" class="primary-button">Process Folder</button>
+            </div>
+
+            <div id="preview-panel" class="preview-panel hidden">
+                <h3>Files Preview</h3>
+                <div class="preview-controls">
+                    <input type="text" id="preview-filter" placeholder="Filter files...">
+                    <div class="preview-stats">
+                        <span id="included-count">0 files included</span>
+                        <span id="excluded-count">0 files excluded</span>
+                    </div>
+                </div>
+                <div id="preview-list" class="preview-list"></div>
+            </div>
+
+            <div id="result-panel" class="result-panel hidden">
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <h4>Characters</h4>
+                        <span id="char-count">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <h4>Approx. Tokens</h4>
+                        <span id="token-count">0</span>
+                    </div>
+                </div>
+                
+                <div class="result-actions">
+                    <button id="save-btn" class="primary-button">Save Combined File</button>
+                    <button id="new-folder-btn" class="secondary-button">Process New Folder</button>
+                </div>
+
+                <div class="preview-container">
+                    <h3>Combined Code Preview</h3>
+                    <pre id="code-preview"></pre>
+                </div>
+            </div>
+        </main>
+
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Processing files...</p>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html> 
