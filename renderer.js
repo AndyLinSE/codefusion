@@ -281,17 +281,6 @@ function updateFilePreview(filterText = '') {
         return true;
     }
 
-    const included = filteredFiles.filter(f => {
-        const isOverridden = individualOverrides.has(f.path);
-        return isOverridden ? individualOverrides.get(f.path) : f.included;
-    }).length;
-    const excluded = filteredFiles.length - included;
-    
-    console.log(`Total files: ${filteredFiles.length}, Included: ${included}, Excluded: ${excluded}`);
-    
-    includedCount.textContent = `${included} files included`;
-    excludedCount.textContent = `${excluded} files excluded`;
-    
     // Filter files based on visibility
     const visibleFiles = filteredFiles.filter(shouldBeVisible);
     console.log(`Visible files after filtering: ${visibleFiles.length}`);
@@ -382,6 +371,25 @@ function updateFilePreview(filterText = '') {
     
     // Add the click handler to the container
     previewList.addEventListener('click', handleDirectoryClick);
+
+    // Calculate included/excluded stats
+    const stats = filteredFiles.reduce((acc, f) => {
+        const isOverridden = individualOverrides.has(f.path);
+        const isIncluded = isOverridden ? individualOverrides.get(f.path) : f.included;
+        
+        if (isIncluded) {
+            acc[f.type === 'directory' ? 'includedDirs' : 'includedFiles']++;
+        } else {
+            acc[f.type === 'directory' ? 'excludedDirs' : 'excludedFiles']++;
+        }
+        return acc;
+    }, { includedFiles: 0, excludedFiles: 0, includedDirs: 0, excludedDirs: 0 });
+    
+    console.log('Stats:', stats);
+    
+    includedCount.textContent = `${stats.includedFiles} files and ${stats.includedDirs} directories included`;
+    excludedCount.textContent = `${stats.excludedFiles} files and ${stats.excludedDirs} directories excluded`;
+    excludedCount.title = 'Files within excluded directories are not counted. Uncheck the corresponding omit box and click "Process Folder" to include them.';
 }
 
 // Helper functions for state management
