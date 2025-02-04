@@ -41,6 +41,9 @@ const supportedExtensions = [
 function createWindow() {
   mainWindow = new BrowserWindow({
     show: false,
+    width: 1200,
+    height: 800,
+    icon: path.join(__dirname, 'assets/icon.ico'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

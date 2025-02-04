@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="512" height="512" rx="100" fill="#2D3748"/>
+    
+    <!-- Multiple files merging into one -->
+    <!-- Left file -->
+    <path d="M120 100h100v140H120z" fill="#4299E1" opacity="0.9"/>
+    <path d="M135 130h70v10h-70z M135 150h50v10h-50z M135 170h60v10h-60z" fill="white"/>
+    
+    <!-- Right file -->
+    <path d="M292 100h100v140H292z" fill="#48BB78" opacity="0.9"/>
+    <path d="M307 130h70v10h-70z M307 150h50v10h-50z M307 170h60v10h-60z" fill="white"/>
+    
+    <!-- Bottom merged file (larger) -->
+    <path d="M156 272h200v140H156z" fill="#ED64A6"/>
+    <path d="M176 302h160v10H176z M176 322h120v10H176z M176 342h140v10H176z M176 362h130v10H176z" fill="white"/>
+    
+    <!-- Connecting arrows -->
+    <path d="M170 240l36 32M342 240l-36 32" stroke="white" stroke-width="8"/>
+</svg> 
