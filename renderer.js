@@ -26,7 +26,7 @@ const customOmit = document.getElementById('custom-omit');
 
 let currentFolderPath = '';
 let filePreviewData = [];
-let individualOverrides = new Set(); // Track individually overridden files
+let individualOverrides = new Map(); // Change from Set to Map to store the desired state
 let supportedExtensions = window.api.getSupportedExtensions();
 
 // Media file extensions to ignore
@@ -146,7 +146,9 @@ async function processFolder() {
     
     try {
         const omitPatterns = buildOmitPatterns();
-        const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides));
+        const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides.entries())
+            .filter(([_, included]) => !included)
+            .map(([path]) => path));
         
         if (result.success) {
             filePreviewData = result.filePreview;
@@ -285,7 +287,7 @@ function updateFilePreview(filterText = '') {
             const isDirectory = item && item.type === 'directory';
             
             // Store current state before changes
-            const currentOverrides = new Set(individualOverrides);
+            const currentOverrides = new Map(individualOverrides);
             
             if (isDirectory) {
                 // Toggle all files in this directory
@@ -294,34 +296,21 @@ function updateFilePreview(filterText = '') {
                 
                 filePreviewData.forEach(f => {
                     if (f.path.startsWith(dirPrefix)) {
-                        const shouldOverride = shouldInclude !== f.included;
-                        if (shouldOverride) {
-                            individualOverrides.add(f.path);
-                        } else {
-                            individualOverrides.delete(f.path);
-                        }
+                        individualOverrides.set(f.path, shouldInclude);
                     }
                 });
                 
                 // Handle directory itself
-                if (shouldInclude !== item.included) {
-                    individualOverrides.add(path);
-                } else {
-                    individualOverrides.delete(path);
-                }
+                individualOverrides.set(path, shouldInclude);
             } else {
                 // Toggle individual file
                 const shouldInclude = !isFileIncluded(path);
-                if (shouldInclude !== item.included) {
-                    individualOverrides.add(path);
-                } else {
-                    individualOverrides.delete(path);
-                }
+                individualOverrides.set(path, shouldInclude);
             }
             
             // Update UI only if state actually changed
             if (!setsAreEqual(currentOverrides, individualOverrides)) {
-                updateFilePreview(filterText);
+                updateFilePreview(document.getElementById('preview-filter').value || '');
                 updateProcessedContent();
             }
         });
@@ -337,31 +326,24 @@ function updateFilePreview(filterText = '') {
             const dirPrefix = path + '/';
             
             // Store current state before changes
-            const currentOverrides = new Set(individualOverrides);
+            const currentOverrides = new Map(individualOverrides);
             
             // Toggle all files in this directory
             filePreviewData.forEach(f => {
                 if (f.path.startsWith(dirPrefix)) {
-                    const shouldOverride = shouldInclude !== f.included;
-                    if (shouldOverride) {
-                        individualOverrides.add(f.path);
-                    } else {
-                        individualOverrides.delete(f.path);
-                    }
+                    individualOverrides.set(f.path, shouldInclude);
                 }
             });
             
             // Handle directory itself
             const dirItem = filePreviewData.find(f => f.path === path);
             if (dirItem && shouldInclude !== dirItem.included) {
-                individualOverrides.add(path);
-            } else {
-                individualOverrides.delete(path);
+                individualOverrides.set(path, shouldInclude);
             }
             
             // Update UI only if state actually changed
             if (!setsAreEqual(currentOverrides, individualOverrides)) {
-                updateFilePreview(filterText);
+                updateFilePreview(document.getElementById('preview-filter').value || '');
                 updateProcessedContent();
             }
         });
@@ -372,19 +354,19 @@ function updateFilePreview(filterText = '') {
 function isFileIncluded(path) {
     const file = filePreviewData.find(f => f.path === path);
     if (!file) return false;
-    return individualOverrides.has(path) ? !file.included : file.included;
+    return individualOverrides.has(path) ? individualOverrides.get(path) : file.included;
 }
 
 function isDirectoryIncluded(path) {
     const dir = filePreviewData.find(f => f.path === path);
     if (!dir) return false;
-    return individualOverrides.has(path) ? !dir.included : dir.included;
+    return individualOverrides.has(path) ? individualOverrides.get(path) : dir.included;
 }
 
 function setsAreEqual(a, b) {
     if (a.size !== b.size) return false;
-    for (const item of a) {
-        if (!b.has(item)) return false;
+    for (const [key, value] of a) {
+        if (!b.has(key) || b.get(key) !== value) return false;
     }
     return true;
 }
@@ -397,11 +379,14 @@ async function updateProcessedContent() {
     
     try {
         const omitPatterns = buildOmitPatterns();
-        const result = await window.api.processFolder(currentFolderPath, omitPatterns, Array.from(individualOverrides));
+        const overridesArray = Array.from(individualOverrides.entries())
+            .filter(([_, included]) => !included)
+            .map(([path]) => path);
+        const result = await window.api.processFolder(currentFolderPath, omitPatterns, overridesArray);
         
         if (result.success) {
             // Update filePreviewData while preserving override states
-            const oldOverrides = new Set(individualOverrides);
+            const oldOverrides = new Map(individualOverrides);
             filePreviewData = result.filePreview;
             individualOverrides = oldOverrides;
             
