@@ -1,6 +1,6 @@
 {
   "name": "codefusion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A desktop app that combines code files into a single annotated file for AI analysis",
   "main": "main.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "devDependencies": {
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "to-ico": "^1.1.5"
   },
   "build": {
     "appId": "com.codefusion.app",
