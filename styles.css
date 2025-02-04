@@ -291,4 +291,25 @@ h1 {
 /* Utility Classes */
 .hidden {
     display: none !important;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.secondary-button {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.secondary-button:hover {
+    background-color: #e0e0e0;
 } 

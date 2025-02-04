@@ -16,6 +16,7 @@ const tokenCount = document.getElementById('token-count');
 const codePreview = document.getElementById('code-preview');
 const saveBtn = document.getElementById('save-btn');
 const newFolderBtn = document.getElementById('new-folder-btn');
+const changeFolderBtn = document.getElementById('change-folder-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 // Checkbox elements
@@ -175,18 +176,33 @@ async function saveCombinedFile() {
 
 // Reset UI for new folder
 function resetUI() {
-    currentFolderPath = '';
-    filePreviewData = [];
-    folderPath.textContent = '';
-    previewList.innerHTML = '';
-    codePreview.textContent = '';
-    charCount.textContent = '0';
-    tokenCount.textContent = '0';
-    
+    // Reset all panels
     settingsPanel.classList.add('hidden');
     previewPanel.classList.add('hidden');
     resultPanel.classList.add('hidden');
-    dropZone.classList.remove('hidden');
+    loadingOverlay.classList.add('hidden');
+    
+    // Clear all input fields and previews
+    folderPath.textContent = '';
+    previewList.innerHTML = '';
+    previewFilter.value = '';
+    customOmit.value = '';
+    codePreview.textContent = '';
+    
+    // Reset checkboxes to default state
+    omitGit.checked = true;
+    omitNodeModules.checked = true;
+    omitHidden.checked = true;
+    
+    // Reset stats
+    includedCount.textContent = '0 files included';
+    excludedCount.textContent = '0 files excluded';
+    charCount.textContent = '0';
+    tokenCount.textContent = '0';
+    
+    // Reset variables
+    currentFolderPath = '';
+    filePreviewData = [];
 }
 
 // Event Listeners
@@ -196,4 +212,11 @@ dropZone.addEventListener('drop', handleDrop);
 processBtn.addEventListener('click', processFolder);
 previewFilter.addEventListener('input', (e) => updateFilePreview(e.target.value));
 saveBtn.addEventListener('click', saveCombinedFile);
-newFolderBtn.addEventListener('click', resetUI); 
+newFolderBtn.addEventListener('click', () => {
+    resetUI();
+    dropZone.classList.remove('hidden');
+});
+changeFolderBtn.addEventListener('click', () => {
+    resetUI();
+    dropZone.classList.remove('hidden');
+}); 
