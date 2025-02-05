@@ -16,6 +16,7 @@ const saveBtn = document.getElementById('save-btn');
 const newFolderBtn = document.getElementById('new-folder-btn');
 const changeFolderBtn = document.getElementById('change-folder-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
+const continueBtn = document.getElementById('continue-btn');
 
 // Navigation elements
 const navLinks = document.querySelectorAll('.nav-step');
@@ -110,6 +111,31 @@ const mediaExtensions = [
     // Other media
     'psd', 'ai', 'eps', 'raw'
 ];
+
+// Create toast container and add it to the body
+const toastContainer = document.createElement('div');
+toastContainer.className = 'toast';
+document.body.appendChild(toastContainer);
+
+// Show toast notification
+function showToast(message, isError = false) {
+    console.log('Showing toast:', message, 'isError:', isError); // Debug log
+    toastContainer.textContent = message;
+    toastContainer.classList.remove('show'); // Reset animation
+    toastContainer.classList.remove('error');
+    
+    // Force a reflow
+    void toastContainer.offsetWidth;
+    
+    if (isError) {
+        toastContainer.classList.add('error');
+    }
+    toastContainer.classList.add('show');
+    
+    setTimeout(() => {
+        toastContainer.classList.remove('show');
+    }, 3000);
+}
 
 // Drag and drop handlers
 function handleDragOver(e) {
@@ -521,34 +547,94 @@ function updateStats(result) {
 
 // Show results panel
 function showResults(result) {
+    console.log('showResults called'); // Debug log
     previewPanel.classList.remove('hidden');
     resultPanel.classList.remove('hidden');
     codePreview.textContent = result.combinedText;
     
-    // Add copy to clipboard button if it doesn't exist
-    if (!document.getElementById('copy-btn')) {
-        const copyBtn = document.createElement('button');
-        copyBtn.id = 'copy-btn';
-        copyBtn.className = 'secondary-button';
-        copyBtn.innerHTML = '📋 Copy to Clipboard';
-        copyBtn.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(codePreview.textContent);
-                const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = '✓ Copied!';
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalText;
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy:', err);
-                copyBtn.innerHTML = '❌ Failed to copy';
-                setTimeout(() => {
-                    copyBtn.innerHTML = '📋 Copy to Clipboard';
-                }, 2000);
-            }
-        });
-        // Insert the copy button before the save button
+    // Remove existing copy button if it exists
+    const existingCopyBtn = document.getElementById('copy-btn');
+    if (existingCopyBtn) {
+        existingCopyBtn.remove();
+    }
+    
+    console.log('Creating new copy button'); // Debug log
+    const copyBtn = document.createElement('button');
+    copyBtn.id = 'copy-btn';
+    copyBtn.className = 'secondary-button';
+    copyBtn.innerHTML = '📋 Copy to Clipboard';
+    
+    // Add a direct click handler first to verify event binding
+    copyBtn.onclick = () => {
+        console.log('Direct onclick handler triggered');
+    };
+    
+    copyBtn.addEventListener('click', function(e) {
+        console.log('Click event listener triggered');
+        handleCopyClick(e);
+    });
+    
+    // Insert the copy button before the save button
+    if (saveBtn && saveBtn.parentNode) {
+        console.log('Inserting copy button into DOM');
         saveBtn.parentNode.insertBefore(copyBtn, saveBtn);
+        console.log('Copy button added to DOM');
+        
+        // Verify button is in DOM
+        const addedBtn = document.getElementById('copy-btn');
+        console.log('Copy button in DOM:', !!addedBtn);
+        console.log('Copy button visible:', addedBtn?.offsetParent !== null);
+    } else {
+        console.error('Save button or its parent not found');
+    }
+}
+
+// Separate function to handle the copy logic
+async function handleCopyClick(e) {
+    console.log('Copy button clicked'); // Debug log
+    console.log('window.api available:', !!window.api); // Debug log
+    console.log('writeToClipboard available:', !!window.api?.writeToClipboard); // Debug log
+    
+    const textToCopy = codePreview.textContent;
+    console.log('Text to copy available:', !!textToCopy); // Debug log
+    
+    if (!textToCopy) {
+        console.warn('No text to copy');
+        showToast('❌ No text to copy', true);
+        return;
+    }
+
+    try {
+        console.log('Text length:', textToCopy.length); // Debug log
+        console.log('First 100 chars:', textToCopy.substring(0, 100)); // Debug log
+        
+        // Test if clipboard API is working
+        console.log('Testing clipboard API...');
+        const testResult = await window.api.writeToClipboard('test');
+        console.log('Test clipboard write successful:', testResult);
+        
+        // Now try the actual copy
+        console.log('Attempting to copy full text...');
+        const success = await window.api.writeToClipboard(textToCopy);
+        console.log('Copy operation result:', success);
+        
+        if (success) {
+            console.log('Successfully copied to clipboard');
+            showToast('✓ Copied to clipboard!');
+            
+            // Verify the clipboard content
+            const clipboardContent = await window.api.readFromClipboard();
+            console.log('Clipboard verification - length matches:', 
+                clipboardContent.length === textToCopy.length);
+        } else {
+            throw new Error('Copy operation failed');
+        }
+    } catch (err) {
+        console.error('Copy failed - Full error:', err);
+        console.error('Error name:', err.name);
+        console.error('Error message:', err.message);
+        console.error('Error stack:', err.stack);
+        showToast('❌ Failed to copy to clipboard', true);
     }
 }
 
@@ -649,4 +735,10 @@ document.getElementById('show-pattern-help').addEventListener('click', (e) => {
     const isHidden = helpSection.classList.contains('hidden');
     helpSection.classList.toggle('hidden');
     e.target.textContent = isHidden ? 'Hide Pattern Examples' : 'Show Pattern Examples';
+});
+
+// Add continue button click handler
+continueBtn.addEventListener('click', () => {
+    resultPanel.scrollIntoView({ behavior: 'smooth' });
+    updateActiveStep('result-panel');
 }); 

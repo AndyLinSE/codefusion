@@ -493,16 +493,16 @@ h1 {
     color: var(--primary-color);
 }
 
-.result-actions {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+.preview-container {
+    margin: 2rem 0;
 }
 
-.preview-container {
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 1rem;
+.result-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 #code-preview {
@@ -700,4 +700,45 @@ h1 {
     font-size: 0.9em;
     color: #718096;
     font-style: italic;
+}
+
+.preview-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    background-color: var(--success-color);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    min-width: 200px;
+    text-align: center;
+    justify-content: center;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.toast.error {
+    background-color: var(--danger-color);
 } 
