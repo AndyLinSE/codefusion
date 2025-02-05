@@ -38,4 +38,7 @@ coverage/
 
 # Temporary files
 .tmp/
-.temp/ 
+.temp/
+
+# Electron-specific environment variables
+.electron-builder.env 

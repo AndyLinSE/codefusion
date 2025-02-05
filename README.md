@@ -254,3 +254,45 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 - **Installer Packaging:**  
   Use **electron-builder** with a configuration tailored to Windows, ensuring that the app can be installed easily on Windows systems.
 
+## 9. Contributing
+
+Contributions are welcome! Here's how you can help:
+
+1. **Fork the Repository**
+   - Fork the project to your GitHub account
+   - Clone your fork locally
+
+2. **Create a Branch**
+   ```powershell
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **Make Your Changes**
+   - Write your code
+   - Test your changes
+   - Commit with clear, descriptive messages
+
+4. **Push and Create a Pull Request**
+   - Push to your fork
+   - Create a Pull Request from your branch to our main branch
+   - Describe your changes in detail
+
+### Development Guidelines
+- Follow the existing code style
+- Add comments for complex logic
+- Update documentation as needed
+- Test your changes thoroughly
+
+## 10. License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 11. Contact
+
+If you have any questions or suggestions, please:
+- Open an issue
+- Submit a pull request
+- Contact the maintainers through GitHub
+
+---
+
