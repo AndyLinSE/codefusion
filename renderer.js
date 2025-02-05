@@ -643,10 +643,13 @@ async function saveCombinedFile() {
     try {
         const result = await window.api.saveFile(codePreview.textContent);
         if (result.success) {
-            alert('File saved successfully!');
+            showToast('✓ File saved successfully!');
+        } else {
+            showToast('❌ Failed to save file', true);
         }
     } catch (error) {
-        alert('Error saving file: ' + error.message);
+        console.error('Save failed:', error);
+        showToast('❌ Failed to save file: ' + error.message, true);
     }
 }
 
