@@ -232,6 +232,12 @@ async function processFolder() {
             updateFilePreview(document.getElementById('preview-filter').value || '');
             updateStats(result);
             showResults(result);
+
+            // Scroll to preview panel with offset for sticky header
+            const navHeight = document.querySelector('.sticky-nav').offsetHeight;
+            const yOffset = -navHeight - 20; // Additional 20px buffer
+            const y = previewPanel.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
         } else {
             alert('Error processing folder: ' + result.error);
         }
