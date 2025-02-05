@@ -42,7 +42,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     show: false,
     width: 1200,
-    height: 800,
+    height: 1200,
     icon: path.join(__dirname, 'assets/icon.ico'),
     webPreferences: {
       nodeIntegration: false,
@@ -53,7 +53,6 @@ function createWindow() {
     }
   });
 
-  mainWindow.maximize();
   mainWindow.show();
   mainWindow.loadFile('index.html');
 }

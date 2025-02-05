@@ -687,6 +687,63 @@ function resetUI() {
     
     // Show drop zone
     dropZone.classList.remove('hidden');
+    
+    showToast('Ready to process new folder');
+}
+
+// Create modal container
+const modalOverlay = document.createElement('div');
+modalOverlay.className = 'modal-overlay';
+modalOverlay.innerHTML = `
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirm Action</h3>
+        </div>
+        <div class="modal-body"></div>
+        <div class="modal-actions">
+            <button class="secondary-button" id="modal-cancel">Cancel</button>
+            <button class="primary-button" id="modal-confirm">Continue</button>
+        </div>
+    </div>
+`;
+document.body.appendChild(modalOverlay);
+
+// Function to show custom confirmation dialog
+function showConfirmation(message) {
+    return new Promise((resolve) => {
+        const modalBody = modalOverlay.querySelector('.modal-body');
+        modalBody.textContent = message;
+        
+        const handleConfirm = () => {
+            modalOverlay.classList.remove('show');
+            cleanup();
+            resolve(true);
+        };
+        
+        const handleCancel = () => {
+            modalOverlay.classList.remove('show');
+            cleanup();
+            resolve(false);
+        };
+        
+        const handleOverlayClick = (e) => {
+            if (e.target === modalOverlay) {
+                handleCancel();
+            }
+        };
+        
+        const cleanup = () => {
+            document.getElementById('modal-confirm').removeEventListener('click', handleConfirm);
+            document.getElementById('modal-cancel').removeEventListener('click', handleCancel);
+            modalOverlay.removeEventListener('click', handleOverlayClick);
+        };
+        
+        document.getElementById('modal-confirm').addEventListener('click', handleConfirm);
+        document.getElementById('modal-cancel').addEventListener('click', handleCancel);
+        modalOverlay.addEventListener('click', handleOverlayClick);
+        
+        modalOverlay.classList.add('show');
+    });
 }
 
 // Event Listeners
@@ -696,13 +753,23 @@ dropZone.addEventListener('drop', handleDrop);
 processBtn.addEventListener('click', processFolder);
 previewFilter.addEventListener('input', (e) => updateFilePreview(e.target.value));
 saveBtn.addEventListener('click', saveCombinedFile);
-newFolderBtn.addEventListener('click', () => {
-    resetUI();
-    dropZone.classList.remove('hidden');
+
+// Add confirmation to new folder button
+newFolderBtn.addEventListener('click', async () => {
+    const confirmed = await showConfirmation('This will clear all current selections and results. Are you sure you want to process a new folder?');
+    if (confirmed) {
+        resetUI();
+        dropZone.classList.remove('hidden');
+    }
 });
-changeFolderBtn.addEventListener('click', () => {
-    resetUI();
-    dropZone.classList.remove('hidden');
+
+// Add confirmation to change folder button
+changeFolderBtn.addEventListener('click', async () => {
+    const confirmed = await showConfirmation('This will clear all current selections and results. Are you sure you want to select a different folder?');
+    if (confirmed) {
+        resetUI();
+        dropZone.classList.remove('hidden');
+    }
 });
 
 // Define the directory click handler outside updateFilePreview

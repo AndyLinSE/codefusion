@@ -501,8 +501,17 @@ h1 {
     margin-top: 2rem;
     display: flex;
     justify-content: center;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
+    padding-bottom: 2rem;
+}
+
+.result-actions button {
+    min-width: 160px;
+}
+
+#copy-btn {
+    margin: 0;
 }
 
 #code-preview {
@@ -550,11 +559,6 @@ h1 {
 .secondary-button:hover {
     background-color: var(--primary-color);
     color: white;
-}
-
-#copy-btn {
-    margin-right: 8px;
-    min-width: 150px;
 }
 
 /* Loading Overlay */
@@ -741,4 +745,67 @@ h1 {
 
 .toast.error {
     background-color: var(--danger-color);
+}
+
+/* Modal Dialog */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-dialog {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-overlay.show .modal-dialog {
+    transform: translateY(0);
+}
+
+.modal-header {
+    margin-bottom: 1rem;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.modal-actions button {
+    min-width: 100px;
 } 
