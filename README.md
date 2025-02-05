@@ -90,28 +90,28 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 ## 3. Implementation Status
 
 ### 3.1 Core Features ✅
-- [x] Drag-and-drop folder selection
-- [x] File system traversal
-- [x] Smart file filtering
-- [x] File content combination
-- [x] Statistics calculation
-- [x] Save functionality
+- [x] Drag-and-drop folder selection ✅
+- [x] File system traversal ✅
+- [x] Smart file filtering ✅
+- [x] File content combination ✅
+- [x] Statistics calculation ✅
+- [x] Save functionality ✅
 
 ### 3.2 UI Features ✅
-- [x] Interactive file preview
-- [x] Folder selection dialog
-- [x] Loading overlay
-- [x] File tree view
-- [x] Omission controls
-- [x] Results display
+- [x] Interactive file preview ✅
+- [x] Folder selection dialog ✅
+- [x] Loading overlay ✅
+- [x] File tree view ✅
+- [x] Omission controls ✅
+- [x] Results display ✅
 
 ### 3.3 Advanced Features ✅
-- [x] `.gitignore` support
-- [x] Custom regex filters
-- [x] Individual file overrides
-- [x] Directory collapsing
-- [x] File search/filtering
-- [x] Copy to clipboard
+- [x] `.gitignore` support ✅
+- [x] Custom regex filters ✅
+- [x] Individual file overrides ✅
+- [x] Directory collapsing ✅
+- [x] File search/filtering ✅
+- [x] Copy to clipboard ✅
 
 ---
 
