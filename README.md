@@ -48,7 +48,24 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 2. Installation
+## 2. Screenshots
+
+To add screenshots:
+1. Create a `screenshots` folder in your repository
+2. Add your screenshots to the folder
+3. Reference them in the README like this:
+
+```markdown
+![Main Window](screenshots/main-window.png)
+![File Preview](screenshots/file-preview.png)
+![Results View](screenshots/results-view.png)
+```
+
+*Note: Replace these placeholder images with your actual screenshots.*
+
+---
+
+## 3. Installation
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v14 or higher)
@@ -87,9 +104,9 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 3. Implementation Status
+## 4. Implementation Status
 
-### 3.1 Core Features ✅
+### 4.1 Core Features ✅
 - [x] Drag-and-drop folder selection ✅
 - [x] File system traversal ✅
 - [x] Smart file filtering ✅
@@ -97,7 +114,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 - [x] Statistics calculation ✅
 - [x] Save functionality ✅
 
-### 3.2 UI Features ✅
+### 4.2 UI Features ✅
 - [x] Interactive file preview ✅
 - [x] Folder selection dialog ✅
 - [x] Loading overlay ✅
@@ -105,7 +122,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 - [x] Omission controls ✅
 - [x] Results display ✅
 
-### 3.3 Advanced Features ✅
+### 4.3 Advanced Features ✅
 - [x] `.gitignore` support ✅
 - [x] Custom regex filters ✅
 - [x] Individual file overrides ✅
@@ -115,9 +132,9 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 4. High-Level Architecture
+## 5. High-Level Architecture
 
-### 4.1 Main Process
+### 5.1 Main Process
 - **Entry Point:** `main.js`  
 - **Responsibilities:**  
   - Create and manage the main application window.  
@@ -126,7 +143,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
   - Expose IPC channels (using `ipcMain`) to receive folder paths and omission settings from the renderer and to send back the combined text and statistics.  
   - Handle file-save dialogs for exporting the combined file.
 
-### 4.2 Renderer Process
+### 5.2 Renderer Process
 - **Entry Point:** `index.html`  
 - **Responsibilities:**  
   - Render the drag-and-drop interface and controls for omission settings.  
@@ -134,7 +151,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
   - Display progress, statistics (character count and approximate token count), and final results.  
   - Trigger processing via IPC calls to the main process.
 
-### 4.3 IPC Communication
+### 5.3 IPC Communication
 - **Channel Examples:**  
   - `process-folder`: Renderer sends the dropped folder path along with omission settings (an array of regular expressions) to the main process.  
   - `processing-complete`: Main process returns the combined text and statistics (total characters, token approximation).  
@@ -142,9 +159,9 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 5. Detailed Technical Specification
+## 6. Detailed Technical Specification
 
-### 5.1 File Handling and Recursion
+### 6.1 File Handling and Recursion
 
 - **Recursive Traversal:**  
   Use a recursive function in the main process to traverse the dropped folder. For each file:
@@ -165,7 +182,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
   - Send this list to the renderer so the user can review and adjust the omission patterns if needed.
   - Allow the user to "toggle" or modify the omission rules via text input or checkboxes (for common patterns).
 
-### 5.2 Combining Files and Generating Statistics
+### 6.2 Combining Files and Generating Statistics
 - **Combining Logic:**  
   As files are read, append the annotated content to a single string (or stream it if needed for larger projects).
   
@@ -180,9 +197,9 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
     ```
   (This approximation assumes an average of 4 characters per token, which is acceptable for your needs.)
 
-### 5.3 User Interface
+### 6.3 User Interface
 
-#### 5.3.1 Main Window Layout
+#### 6.3.1 Main Window Layout
 - **Drag-and-Drop Area:**  
   A prominent area where users can drop their folder. Visual cues (e.g., "Drop your code folder here") help indicate the action.
   
@@ -200,7 +217,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
   - A large text area containing the combined annotated code.
   - A "Save File" button to export the results via a file dialog.
 
-#### 5.3.2 Example UI Flow
+#### 6.3.2 Example UI Flow
 1. **Landing Screen:**  
    The main window invites you to drag and drop your code folder.
 2. **Preview Screen:**  
@@ -210,7 +227,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 4. **Results Screen:**  
    The app shows the combined text along with character and token counts, and provides an option to save the file.
 
-### 5.4 Packaging for Windows
+### 6.4 Packaging for Windows
 - **Tool:**  
   Use a tool like **electron-builder** to package the app as a Windows installer.
 - **Configuration:**  
@@ -218,7 +235,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 6. Code Structure Overview
+## 7. Code Structure Overview
 
 ```
 /my-code-combiner-app
@@ -233,7 +250,7 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ---
 
-## 7. Additional Considerations
+## 8. Additional Considerations
 
 - **Performance:**  
   Given a couple of megabytes of code (after omitting `node_modules` and similar folders), synchronous file reads should suffice, though you could refactor to asynchronous reads if needed.
