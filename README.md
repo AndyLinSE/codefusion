@@ -50,16 +50,9 @@ Create a desktop app that lets you drag-and-drop a codebase folder onto a window
 
 ## 2. Screenshots
 
-To add screenshots:
-1. Create a `screenshots` folder in your repository
-2. Add your screenshots to the folder
-3. Reference them in the README like this:
-
-```markdown
 ![Main Window](screenshots/main-window.png)
 ![File Preview](screenshots/file-preview.png)
 ![Results View](screenshots/results-view.png)
-```
 
 *Note: Replace these placeholder images with your actual screenshots.*
 
