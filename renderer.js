@@ -17,6 +17,43 @@ const newFolderBtn = document.getElementById('new-folder-btn');
 const changeFolderBtn = document.getElementById('change-folder-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
 
+// Navigation elements
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = [settingsPanel, previewPanel, resultPanel];
+const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const sectionId = entry.target.id;
+            updateActiveNavLink(sectionId);
+        }
+    });
+}, { threshold: 0.5 });
+
+// Initialize section observers
+sections.forEach(section => {
+    if (section) sectionObserver.observe(section);
+});
+
+// Update active navigation link
+function updateActiveNavLink(sectionId) {
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href').substring(1);
+        link.classList.toggle('active', href === sectionId);
+    });
+}
+
+// Smooth scroll to section
+navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+});
+
 // Checkbox elements
 const omitGit = document.getElementById('omit-git');
 const omitNodeModules = document.getElementById('omit-node-modules');
@@ -571,4 +608,12 @@ function handleDirectoryClick(e) {
     
     console.log('Collapsed directories after:', Array.from(collapsedDirectories));
     updateFilePreview(document.getElementById('preview-filter').value || '');
-} 
+}
+
+// Add event listener for pattern help button
+document.getElementById('show-pattern-help').addEventListener('click', (e) => {
+    const helpSection = document.getElementById('pattern-help');
+    const isHidden = helpSection.classList.contains('hidden');
+    helpSection.classList.toggle('hidden');
+    e.target.textContent = isHidden ? 'Hide Pattern Examples' : 'Show Pattern Examples';
+}); 

@@ -125,19 +125,32 @@ function registerIpcHandlers() {
 
     // Default patterns to omit with labels
     const defaultOmitPatterns = [
-      { pattern: /^\.git\//, label: 'Git directory' },
-      { pattern: /^node_modules\//, label: 'Node modules directory' },
-      { pattern: /^[.].*/, label: 'Hidden file/directory' },
-      { pattern: /^dist\//, label: 'Distribution directory' },
-      { pattern: /^build\//, label: 'Build directory' },
-      { pattern: /^out\//, label: 'Output directory' },
-      { pattern: /^coverage\//, label: 'Test coverage directory' },
-      { pattern: /^temp\/|^\.tmp\//, label: 'Temporary files directory' },
-      { pattern: /^__pycache__\//, label: 'Python cache directory' },
-      { pattern: /^vendor\//, label: 'Third-party vendor directory' },
-      { pattern: /^bin\//, label: 'Binary files directory' },
-      { pattern: /^obj\//, label: 'Object files directory' },
-      { pattern: /^target\//, label: 'Build target directory' }
+      { pattern: /[\/\\]\.git[\/\\]|^\.git[\/\\]/, label: 'Git directory' },
+      { pattern: /[\/\\]node_modules[\/\\]|^node_modules[\/\\]/, label: 'Node modules directory' },
+      { pattern: /(^|[\/\\])\.[^\/\\]+($|[\/\\])/, label: 'Hidden file/directory' },
+      { pattern: /[\/\\]dist[\/\\]|^dist[\/\\]/, label: 'Distribution directory' },
+      { pattern: /[\/\\]build[\/\\]|^build[\/\\]/, label: 'Build directory' },
+      { pattern: /[\/\\]out[\/\\]|^out[\/\\]/, label: 'Output directory' },
+      { pattern: /[\/\\]coverage[\/\\]|^coverage[\/\\]/, label: 'Test coverage directory' },
+      { pattern: /[\/\\](temp|\.tmp)[\/\\]|^(temp|\.tmp)[\/\\]/, label: 'Temporary files directory' },
+      { pattern: /[\/\\]__pycache__[\/\\]|^__pycache__[\/\\]/, label: 'Python cache directory' },
+      { pattern: /[\/\\]vendor[\/\\]|^vendor[\/\\]/, label: 'Third-party vendor directory' },
+      { pattern: /[\/\\]bin[\/\\]|^bin[\/\\]/, label: 'Binary files directory' },
+      { pattern: /[\/\\]obj[\/\\]|^obj[\/\\]/, label: 'Object files directory' },
+      { pattern: /[\/\\]target[\/\\]|^target[\/\\]/, label: 'Build target directory' }
+    ];
+
+    // Example custom pattern formats (for documentation)
+    const customPatternExamples = [
+      // These are just examples and won't be used in the actual filtering
+      { pattern: 'test\\.js$', description: 'Ignore all test.js files' },
+      { pattern: '\\.spec\\.', description: 'Ignore all spec/test files' },
+      { pattern: 'backup', description: 'Ignore any path containing "backup"' },
+      { pattern: '^src/temp/', description: 'Ignore temp folder only in src directory' },
+      { pattern: '\\.min\\.js$', description: 'Ignore minified JavaScript files' },
+      { pattern: '(logs?|debug)', description: 'Ignore log or debug folders/files' },
+      { pattern: '\\.bak$', description: 'Ignore backup files ending in .bak' },
+      { pattern: 'draft.*\\.md$', description: 'Ignore markdown files starting with draft' }
     ];
 
     // Convert gitignore patterns

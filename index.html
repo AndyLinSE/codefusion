@@ -14,6 +14,14 @@
             <p class="subtitle">Combine your code files for AI analysis</p>
         </header>
 
+        <nav id="sticky-nav" class="sticky-nav">
+            <ul>
+                <li><a href="#settings-panel" class="nav-link active">Select Folder & Settings</a></li>
+                <li><a href="#preview-panel" class="nav-link">Files Preview</a></li>
+                <li><a href="#result-panel" class="nav-link">Combined Code</a></li>
+            </ul>
+        </nav>
+
         <main>
             <div id="drop-zone" class="drop-zone">
                 <div class="drop-zone-content">
@@ -93,7 +101,22 @@
                     
                     <div class="custom-patterns">
                         <label for="custom-omit">Additional patterns to ignore (comma-separated):</label>
-                        <input type="text" id="custom-omit" placeholder="e.g., \.log$, temp">
+                        <input type="text" id="custom-omit" placeholder="e.g., \.spec\., backup, \.min\.js$">
+                        <button id="show-pattern-help" class="help-button">Show Pattern Examples</button>
+                        <div id="pattern-help" class="pattern-help hidden">
+                            <h4>Custom Pattern Examples:</h4>
+                            <ul>
+                                <li><code>test\.js$</code> - Ignore all test.js files</li>
+                                <li><code>\.spec\.</code> - Ignore all spec/test files</li>
+                                <li><code>backup</code> - Ignore any path containing "backup"</li>
+                                <li><code>^src/temp/</code> - Ignore temp folder only in src directory</li>
+                                <li><code>\.min\.js$</code> - Ignore minified JavaScript files</li>
+                                <li><code>(logs?|debug)</code> - Ignore log or debug folders/files</li>
+                                <li><code>\.bak$</code> - Ignore backup files ending in .bak</li>
+                                <li><code>draft.*\.md$</code> - Ignore markdown files starting with draft</li>
+                            </ul>
+                            <p class="help-note">Note: Patterns are case-insensitive regular expressions. Use \ to escape special characters.</p>
+                        </div>
                     </div>
                 </div>
 
