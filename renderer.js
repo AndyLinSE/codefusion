@@ -139,6 +139,7 @@ function handleFolderSelection(path) {
     dropZone.classList.add('hidden');
     settingsPanel.classList.remove('hidden');
     previewPanel.classList.remove('hidden');
+    document.getElementById('sticky-nav').classList.remove('hidden');
 }
 
 // Build omit patterns from UI settings
@@ -558,10 +559,11 @@ function resetUI() {
     includedCount.textContent = '0 files included';
     excludedCount.textContent = '0 files excluded';
     
-    // Hide panels
+    // Hide panels and navigation
     settingsPanel.classList.add('hidden');
     previewPanel.classList.add('hidden');
     resultPanel.classList.add('hidden');
+    document.getElementById('sticky-nav').classList.add('hidden');
     
     // Show drop zone
     dropZone.classList.remove('hidden');
