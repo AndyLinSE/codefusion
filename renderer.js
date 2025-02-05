@@ -18,13 +18,15 @@ const changeFolderBtn = document.getElementById('change-folder-btn');
 const loadingOverlay = document.getElementById('loading-overlay');
 
 // Navigation elements
-const navLinks = document.querySelectorAll('.nav-link');
+const navLinks = document.querySelectorAll('.nav-step');
 const sections = [settingsPanel, previewPanel, resultPanel];
+const progressNav = document.querySelector('.progress-nav');
+
 const sectionObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             const sectionId = entry.target.id;
-            updateActiveNavLink(sectionId);
+            updateActiveStep(sectionId);
         }
     });
 }, { threshold: 0.5 });
@@ -34,11 +36,34 @@ sections.forEach(section => {
     if (section) sectionObserver.observe(section);
 });
 
-// Update active navigation link
-function updateActiveNavLink(sectionId) {
+// Update active navigation step
+function updateActiveStep(sectionId) {
+    const stepMap = {
+        'settings-panel': 1,
+        'preview-panel': 2,
+        'result-panel': 3
+    };
+    
+    const currentStep = stepMap[sectionId];
+    if (!currentStep) return;
+
+    // Update progress bar
+    progressNav.setAttribute('data-step', currentStep);
+
+    // Update step states
     navLinks.forEach(link => {
         const href = link.getAttribute('href').substring(1);
-        link.classList.toggle('active', href === sectionId);
+        const stepNumber = stepMap[href];
+        
+        // Remove all states first
+        link.classList.remove('active', 'completed');
+        
+        // Add appropriate state
+        if (stepNumber === currentStep) {
+            link.classList.add('active');
+        } else if (stepNumber < currentStep) {
+            link.classList.add('completed');
+        }
     });
 }
 
@@ -48,7 +73,7 @@ navLinks.forEach(link => {
         e.preventDefault();
         const targetId = link.getAttribute('href').substring(1);
         const targetSection = document.getElementById(targetId);
-        if (targetSection) {
+        if (targetSection && !targetSection.classList.contains('hidden')) {
             targetSection.scrollIntoView({ behavior: 'smooth' });
         }
     });

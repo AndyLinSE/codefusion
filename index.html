@@ -11,15 +11,33 @@
     <div class="container">
         <header>
             <h1>CodeFusion</h1>
-            <p class="subtitle">Combine your code files for AI analysis</p>
+            <p class="subtitle">Combine your code files for AI analysis </p>
         </header>
 
         <nav id="sticky-nav" class="sticky-nav hidden">
-            <ul>
-                <li><a href="#settings-panel" class="nav-link active">Select Folder & Settings</a></li>
-                <li><a href="#preview-panel" class="nav-link">Files Preview</a></li>
-                <li><a href="#result-panel" class="nav-link">Combined Code</a></li>
-            </ul>
+            <div class="progress-nav">
+                <div class="progress-bar"></div>
+                <ul>
+                    <li>
+                        <a href="#settings-panel" class="nav-step active">
+                            <span class="step-number">1</span>
+                            <span class="step-label">Select & Configure</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#preview-panel" class="nav-step">
+                            <span class="step-number">2</span>
+                            <span class="step-label">Preview Files</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#result-panel" class="nav-step">
+                            <span class="step-number">3</span>
+                            <span class="step-label">Combined Code</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </nav>
 
         <main>
